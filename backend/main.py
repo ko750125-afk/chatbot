@@ -2,7 +2,7 @@ import os
 import io
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import google.genai as genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -17,10 +17,15 @@ genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 app = FastAPI(title="AI Chatbot Backend")
 
+# 기본 CORS 허용 목록 (로컬 개발용)
+default_origins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]
+frontend_origins = os.getenv("FRONTEND_ORIGINS")
+allowed_origins = [origin.strip() for origin in frontend_origins.split(",")] if frontend_origins else default_origins
+
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,7 +33,7 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     message: str
-    history: list = []
+    history: list = Field(default_factory=list)
     pdf_context: str = ""
     use_search: bool = False
 
@@ -91,7 +96,7 @@ async def chat(request: ChatRequest):
         }
     except Exception as e:
         print(f"Error in chat endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to generate chat response")
 
 @app.post("/api/summarize")
 async def summarize(request: SummarizeRequest):
@@ -123,7 +128,7 @@ async def summarize(request: SummarizeRequest):
         }
     except Exception as e:
         print(f"Error in summarize endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to summarize content")
 
 @app.get("/api/health")
 async def health_check():
@@ -131,4 +136,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
