@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Sparkles, Command, Mic, MicOff, Volume2, VolumeX, Paperclip, X, FileText, Printer, FileCheck, Search } from 'lucide-react';
 import { sendMessage, Message, uploadPdf, summarizePdf } from '@/lib/api';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import ReactMarkdown from 'react-markdown';
 
 export default function ChatInterface() {
@@ -19,6 +20,8 @@ export default function ChatInterface() {
   const [reportContent, setReportContent] = useState('');
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSearchEnabled, setIsSearchEnabled] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -29,6 +32,30 @@ export default function ChatInterface() {
   useEffect(() => {
     inputRef.current = input;
   }, [input]);
+
+  useEffect(() => {
+    if (!supabase) {
+      setIsAuthLoading(false);
+      return;
+    }
+    const client = supabase;
+
+    const initializeSession = async () => {
+      const { data } = await client.auth.getSession();
+      setUserEmail(data.session?.user?.email ?? null);
+      setIsAuthLoading(false);
+    };
+
+    initializeSession();
+
+    const { data: authListener } = client.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const speak = useCallback((text: string) => {
     if (!isTtsEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -125,6 +152,23 @@ export default function ChatInterface() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    if (!supabase) return;
+    const client = supabase;
+    await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+  };
+
+  const handleLogout = async () => {
+    if (!supabase) return;
+    const client = supabase;
+    await client.auth.signOut();
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -207,38 +251,66 @@ export default function ChatInterface() {
   return (
     <div className="flex flex-col h-[85vh] w-full max-w-5xl glass rounded-[2rem] overflow-hidden animate-fadeIn">
       {/* Header */}
-      <div className="px-8 py-5 border-b border-[#d7e3f2] flex items-center justify-between bg-[#f1f6fc]">
+      <div className="px-8 py-5 border-b border-[#c3d2e7] flex items-center justify-between bg-gradient-to-r from-[#243e6f] to-[#36588f]">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-[#e6effc] border border-[#d4e2f5] shadow-[inset_3px_3px_8px_rgba(172,191,214,0.35),inset_-3px_-3px_8px_rgba(255,255,255,0.95)]">
-            <Bot size={20} className="text-[#4568bb]" />
+          <div className="p-2.5 rounded-2xl bg-[#eef4ff]/20 border border-[#9bb4dd]/50 shadow-[inset_2px_2px_8px_rgba(255,255,255,0.2)]">
+            <Bot size={20} className="text-[#edf4ff]" />
           </div>
           <div>
-            <h2 className="font-bold text-lg tracking-tight text-[#22365f]">Antigravity AI</h2>
+            <h2 className="font-bold text-lg tracking-tight text-white">Antigravity AI</h2>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#74a2ff] animate-pulse" />
-              <span className="text-xs text-[#88a0c4] font-semibold uppercase tracking-widest">Active Now</span>
+              <span className="w-2 h-2 rounded-full bg-[#b6cffd] animate-pulse" />
+              <span className="text-xs text-[#d8e5fb] font-semibold uppercase tracking-widest">Active Now</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#ffffff14] border border-[#b7c9e622] text-[10px] text-[#d8e5fb] font-mono">
+            <Command size={10} className="text-[#d8e5fb]" />
+            <span>V2.5 FLASH</span>
+          </div>
           <button 
             onClick={toggleTts}
-            className={`p-2 rounded-xl border transition-all ${isTtsEnabled ? 'text-[#4f7cf7] bg-[#e8f0ff] border-[#bfd2f3]' : 'text-[#9fb1cd] bg-[#edf3fb] border-[#d7e3f2]'}`}
+            className={`p-2 rounded-xl border transition-all ${isTtsEnabled ? 'text-[#1f3560] bg-[#dbe8ff] border-[#aac3ef]' : 'text-[#e2ebfb] bg-[#ffffff14] border-[#b7c9e622]'}`}
             title={isTtsEnabled ? "Disable TTS" : "Enable TTS"}
           >
             {isTtsEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#edf3fb] border border-[#d7e3f2] text-[10px] text-[#90a5c6] font-mono">
-            <Command size={10} className="text-[#90a5c6]" />
-            <span>V2.5 FLASH</span>
-          </div>
+          {hasSupabaseEnv ? (
+            isAuthLoading ? (
+              <div className="px-3 py-1.5 rounded-xl border border-[#b7c9e622] text-xs text-[#d8e5fb]">
+                Auth...
+              </div>
+            ) : userEmail ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-3 py-1.5 rounded-xl border border-[#b7c9e622] bg-[#ffffff14] text-xs text-[#d8e5fb] hover:bg-[#ffffff24] transition-all"
+                title={userEmail}
+              >
+                Logout
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="px-3 py-1.5 rounded-xl border border-[#b7c9e622] bg-[#ffffff14] text-xs text-[#d8e5fb] hover:bg-[#ffffff24] transition-all"
+              >
+                Google Login
+              </button>
+            )
+          ) : (
+            <div className="px-3 py-1.5 rounded-xl border border-[#b7c9e622] text-xs text-[#d8e5fb]">
+              Auth Off
+            </div>
+          )}
         </div>
       </div>
 
       {/* Chat Area */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-8 space-y-6 scroll-smooth bg-[#f6faff]"
+        className="flex-1 overflow-y-auto p-8 space-y-6 scroll-smooth bg-gradient-to-b from-[#f7faff] to-[#ebf1f9]"
       >
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-70">
@@ -267,7 +339,7 @@ export default function ChatInterface() {
                 </div>
                 <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                   msg.role === 'user'
-                    ? 'bg-gradient-to-br from-[#5f8cff] to-[#4f7cf7] text-white rounded-tr-none shadow-[0_8px_24px_rgba(79,124,247,0.25)]'
+                    ? 'bg-gradient-to-br from-[#2f4f86] to-[#203b68] text-white rounded-tr-none shadow-[0_8px_24px_rgba(31,56,97,0.32)]'
                     : 'bg-[#edf3fb] border border-[#d7e3f2] text-[#2e4469] rounded-tl-none'
                 }`}>
                   {msg.parts[0].text}
@@ -328,7 +400,7 @@ export default function ChatInterface() {
       )}
 
       {/* Input Area */}
-      <form onSubmit={handleSubmit} className="p-6 bg-[#f1f6fc] border-t border-[#d7e3f2]">
+      <form onSubmit={handleSubmit} className="p-6 bg-gradient-to-r from-[#eaf1fb] to-[#e3ecf8] border-t border-[#c6d5e8]">
         <div className="relative flex items-center gap-3">
           <input 
             type="file" 
@@ -363,7 +435,7 @@ export default function ChatInterface() {
             onClick={() => setIsSearchEnabled((prev) => !prev)}
             className={`p-3 rounded-2xl transition-all border ${
               isSearchEnabled
-                ? 'bg-[#e7eeff] text-[#4f7cf7] border-[#bfd2f3] shadow-lg shadow-[#9ebdf540]'
+                ? 'bg-[#dbe8ff] text-[#1f3560] border-[#aac3ef] shadow-lg shadow-[#9ebdf540]'
                 : 'bg-[#edf3fb] text-[#93a8c8] border-[#d7e3f2] hover:bg-[#e6eefb] hover:text-[#4b689c]'
             }`}
             title={isSearchEnabled ? 'Google Search Grounding ON' : 'Google Search Grounding OFF'}
@@ -382,7 +454,7 @@ export default function ChatInterface() {
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-2xl bg-[#4f7cf7] hover:bg-[#416fe7] disabled:opacity-50 disabled:hover:bg-[#4f7cf7] transition-all shadow-[0_10px_22px_rgba(79,124,247,0.32)] text-white"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-2xl bg-[#223a67] hover:bg-[#1a3058] disabled:opacity-50 disabled:hover:bg-[#223a67] transition-all shadow-[0_10px_22px_rgba(34,58,103,0.35)] text-white"
             >
               <Send size={18} />
             </button>

@@ -14,6 +14,7 @@ load_dotenv()
 # Gemini API 설정
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+MODEL_NAME = "gemini-2.5-flash"
 
 app = FastAPI(title="AI Chatbot Backend")
 
@@ -42,11 +43,29 @@ class SummarizeRequest(BaseModel):
     language: str = "ko"
 
 
+def require_genai_client() -> genai.Client:
+    if not genai_client:
+        raise HTTPException(status_code=500, detail="Gemini API Key not configured")
+    return genai_client
+
+
 def build_generate_config(use_search: bool) -> types.GenerateContentConfig | None:
     if not use_search:
         return None
     return types.GenerateContentConfig(
         tools=[types.Tool(google_search=types.GoogleSearch())]
+    )
+
+
+def build_chat_prompt(message: str, pdf_context: str) -> str:
+    if not pdf_context:
+        return message
+    return (
+        "[PDF Context Info]\n"
+        f"{pdf_context}\n\n"
+        "[User Message]\n"
+        f"{message}\n\n"
+        "Please answer the user's message based on the provided PDF context if relevant."
     )
 
 @app.post("/api/upload-pdf")
@@ -74,18 +93,13 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    if not genai_client:
-        raise HTTPException(status_code=500, detail="Gemini API Key not configured")
+    client = require_genai_client()
     
     try:
-        # PDF 컨텍스트가 있으면 프롬프트에 추가
-        prompt = request.message
-        if request.pdf_context:
-            prompt = f"[PDF Context Info]\n{request.pdf_context}\n\n[User Message]\n{request.message}\n\nPlease answer the user's message based on the provided PDF context if relevant."
-
+        prompt = build_chat_prompt(request.message, request.pdf_context)
         contents = [*request.history, {"role": "user", "parts": [{"text": prompt}]}]
-        response = genai_client.models.generate_content(
-            model='gemini-2.5-flash',
+        response = client.models.generate_content(
+            model=MODEL_NAME,
             contents=contents,
             config=build_generate_config(request.use_search)
         )
@@ -100,8 +114,7 @@ async def chat(request: ChatRequest):
 
 @app.post("/api/summarize")
 async def summarize(request: SummarizeRequest):
-    if not genai_client:
-        raise HTTPException(status_code=500, detail="Gemini API Key not configured")
+    client = require_genai_client()
     
     try:
         prompt = f"""
@@ -117,8 +130,8 @@ async def summarize(request: SummarizeRequest):
         {request.pdf_context}
         """
         
-        response = genai_client.models.generate_content(
-            model='gemini-2.5-flash',
+        response = client.models.generate_content(
+            model=MODEL_NAME,
             contents=prompt
         )
         

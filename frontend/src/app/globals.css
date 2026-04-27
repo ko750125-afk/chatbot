@@ -6,18 +6,18 @@
 }
 
 :root {
-  --background: #eef4fb;
-  --foreground: #1d2a44;
-  --panel-bg: #f4f8fd;
-  --panel-border: #d9e4f1;
-  --shadow-soft: 12px 12px 26px rgba(168, 187, 212, 0.45);
-  --shadow-inset: inset 8px 8px 16px rgba(172, 191, 214, 0.35), inset -8px -8px 16px rgba(255, 255, 255, 0.95);
-  --accent-primary: #4f7cf7;
-  --accent-secondary: #72a3ff;
+  --background: #e8eff8;
+  --foreground: #182742;
+  --panel-bg: #f3f7fd;
+  --panel-border: #cfdbeb;
+  --shadow-soft: 12px 12px 26px rgba(150, 169, 194, 0.42);
+  --shadow-inset: inset 8px 8px 16px rgba(165, 182, 206, 0.3), inset -8px -8px 16px rgba(255, 255, 255, 0.92);
+  --accent-primary: #223a67;
+  --accent-secondary: #5f84c9;
 }
 
 body {
-  background: linear-gradient(180deg, #f5f9ff 0%, #e9f1fb 100%);
+  background: linear-gradient(135deg, #ecf3fc 0%, #dde8f5 52%, #d2deef 100%);
   color: var(--foreground);
   min-height: 100vh;
   overflow-x: hidden;
@@ -66,7 +66,7 @@ body {
 .typing-dot {
   width: 4px;
   height: 4px;
-  background: #7898c7;
+  background: #5f7ea9;
   border-radius: 50%;
   animation: typing 1.4s infinite ease-in-out;
 }
