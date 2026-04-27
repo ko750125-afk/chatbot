@@ -6,28 +6,33 @@
 }
 
 :root {
-  --background: #050505;
-  --foreground: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --accent-primary: #00d2ff;
-  --accent-secondary: #3a7bd5;
+  --background: #eef4fb;
+  --foreground: #1d2a44;
+  --panel-bg: #f4f8fd;
+  --panel-border: #d9e4f1;
+  --shadow-soft: 12px 12px 26px rgba(168, 187, 212, 0.45);
+  --shadow-inset: inset 8px 8px 16px rgba(172, 191, 214, 0.35), inset -8px -8px 16px rgba(255, 255, 255, 0.95);
+  --accent-primary: #4f7cf7;
+  --accent-secondary: #72a3ff;
 }
 
 body {
-  background: radial-gradient(circle at top left, #1a1a2e 0%, #050505 50%, #16213e 100%);
+  background: linear-gradient(180deg, #f5f9ff 0%, #e9f1fb 100%);
   color: var(--foreground);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* Glassmorphism utility */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow-soft), -10px -10px 20px rgba(255, 255, 255, 0.9);
+}
+
+.inset-soft {
+  background: #f2f7fd;
+  border: 1px solid #dce8f5;
+  box-shadow: var(--shadow-inset);
 }
 
 /* Scrollbar styling */
@@ -40,12 +45,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--glass-border);
+  background: #c0d2e8;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #a8bfdd;
 }
 
 /* Animations */
@@ -61,7 +66,7 @@ body {
 .typing-dot {
   width: 4px;
   height: 4px;
-  background: white;
+  background: #7898c7;
   border-radius: 50%;
   animation: typing 1.4s infinite ease-in-out;
 }
@@ -73,24 +78,24 @@ body {
 
 /* Custom Prose for Markdown */
 .prose-custom {
-  color: rgba(255, 255, 255, 0.8);
+  color: #2f4366;
   line-height: 1.8;
 }
 
 .prose-custom h1 {
   font-size: 1.875rem;
   font-weight: 700;
-  color: white;
+  color: #203458;
   margin-top: 2rem;
   margin-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #c9d8ea;
   padding-bottom: 0.5rem;
 }
 
 .prose-custom h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #22d3ee;
+  color: #2d5fd6;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
@@ -98,7 +103,7 @@ body {
 .prose-custom h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: white;
+  color: #203458;
   margin-top: 1.25rem;
   margin-bottom: 0.5rem;
 }
@@ -118,16 +123,16 @@ body {
 }
 
 .prose-custom strong {
-  color: #22d3ee;
+  color: #2d5fd6;
   font-weight: 600;
 }
 
 .prose-custom blockquote {
-  border-left: 4px solid #22d3ee;
+  border-left: 4px solid #2d5fd6;
   padding-left: 1rem;
   font-style: italic;
   margin: 1.5rem 0;
-  background: rgba(34, 211, 238, 0.05);
+  background: #eaf2ff;
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
