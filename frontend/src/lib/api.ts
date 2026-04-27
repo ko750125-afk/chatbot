@@ -3,9 +3,11 @@ export interface Message {
   parts: [{ text: string }];
 }
 
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+
 export const sendMessage = async (message: string, history: Message[], pdfContext: string = "", useSearch: boolean = false) => {
   try {
-    const response = await fetch('http://localhost:8000/api/chat', {
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +38,7 @@ export const uploadPdf = async (file: File) => {
   formData.append('file', file);
 
   try {
-    const response = await fetch('http://localhost:8000/api/upload-pdf', {
+    const response = await fetch(`${API_BASE_URL}/api/upload-pdf`, {
       method: 'POST',
       body: formData,
     });
@@ -55,7 +57,7 @@ export const uploadPdf = async (file: File) => {
 
 export const summarizePdf = async (pdfContext: string) => {
   try {
-    const response = await fetch('http://localhost:8000/api/summarize', {
+    const response = await fetch(`${API_BASE_URL}/api/summarize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
